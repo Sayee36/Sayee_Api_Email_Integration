@@ -5,31 +5,18 @@ from pydantic import BaseModel
 from typing import Optional, Union
 from datetime import date
 
-# -----------------------------
-# Logging
-# -----------------------------
 logging.basicConfig(level=logging.INFO)
-
 app = FastAPI(title="AJO AI Email Generator", version="2.0")
 
-# -----------------------------
-# GROQ CONFIGURATION
-# -----------------------------
 GROQ_API_KEY = "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"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# -----------------------------
-# Request Model (AJO Payload)
-# -----------------------------
 class EmailRequest(BaseModel):
     user_prompt: str
     first_name: str = "Valued"
     last_name: str = "Customer"
     dob: Optional[Union[date, str]] = "Not Provided"
 
-# -----------------------------
-# API ENDPOINT
-# -----------------------------
 @app.post("/generate-email")
 async def generate_email(request: EmailRequest):
     try:
@@ -39,29 +26,21 @@ async def generate_email(request: EmailRequest):
         }
 
         full_name = f"{request.first_name} {request.last_name}".strip()
-        
-        # 1. CLEAN DATE LOGIC
-        if isinstance(request.dob, date):
-            dob_display = request.dob.strftime("%Y-%m-%d")
-        else:
-            dob_display = "Not provided"
-            
-        dob_info = f"Date of Birth: {dob_display}"
+        dob_val = request.dob.strftime("%Y-%m-%d") if isinstance(request.dob, date) else "Not provided"
+        dob_info = f"Date of Birth: {dob_val}"
 
-        # 2. UPDATED SYSTEM PROMPT
+        # THE ULTIMATE COMPATIBILITY PROMPT
         system_instructions = (
-            "You are an expert AJO Developer. Generate professional HTML using <table> layouts. "
-            "Return ONLY raw HTML. No markdown code blocks. No <html>, <head>, or <body> tags. "
-            "Use inline CSS for maximum compatibility (Outlook/Gmail). "
-            f"1. Greeting: Write 'Hello {full_name}' directly in the HTML. "
-            f"2. Personalization: Note {dob_info}. Mention their birthday if it matches today's date. "
-            "3. Layout: Include a Header, Body, and Footer with 600px width. "
-            "4. IMAGE LOGIC (CRITICAL): Use this EXACT URL format for the <img> tag: "
-            "https://source.unsplash.com/featured/600x300?{topic} "
-            "Replace {topic} with a keyword from the prompt (e.g., 'flowers', 'anniversary'). "
-            "Example: <img src='https://source.unsplash.com/featured/600x300?flowers' width='600' style='display:block;'> "
-            "5. Sign off: Always sign off as 'The YanIT Solutions Team'. "
-            "CRITICAL: Do not include any conversational text before or after the HTML."
+            "You are an expert Email Developer. Generate a single <table> (max-width: 600px). "
+            "STRICT RULES: "
+            "1. NO <style> tags. All CSS MUST be inline (e.g., <td style='padding:20px;'>). "
+            "2. Use 'mso-table-lspace:0pt; mso-table-rspace:0pt;' for Outlook compatibility. "
+            "3. IMAGE: Use <img src='...' width='600' style='display:block; width:100%; max-width:600px; height:auto; border:0;'>. "
+            "4. For flowers/anniversary, use: https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?w=600&q=80 "
+            "5. CONTENT: Center all text. Use a clean sans-serif font (Arial, sans-serif). "
+            f"6. PERSONALIZATION: Start with 'Hello {full_name}'. Mention {dob_info} only if relevant. "
+            "7. SIGN OFF: 'The YanIT Solutions Team'. "
+            "8. OUTPUT: Return ONLY the <table> code. No markdown, no intro text."
         )
 
         payload = {
@@ -70,33 +49,23 @@ async def generate_email(request: EmailRequest):
                 {"role": "system", "content": system_instructions},
                 {"role": "user", "content": f"Topic: {request.user_prompt}"}
             ],
-            "temperature": 0.4,
+            "temperature": 0.3,
             "max_tokens": 1500
         }
 
         response = requests.post(GROQ_URL, headers=headers, json=payload, timeout=30)
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail=f"Groq API Error: {response.text}")
-
         result = response.json()
         html_output = result["choices"][0]["message"]["content"]
         
-        # 3. CLEANING OUTPUT
-        if "table" in html_output.lower():
-            start_index = html_output.lower().find("<table")
-            end_index = html_output.lower().rfind("</table>") + 8
-            if start_index != -1 and end_index != -1:
-                html_output = html_output[start_index:end_index]
+        # Clean markdown if AI ignores instructions
+        if "```html" in html_output:
+            html_output = html_output.split("```html")[1].split("```")[0].strip()
 
         return {"html_email": html_output}
 
     except Exception as e:
-        logging.error(f"Failed to generate email: {str(e)}")
-        return {
-            "html_email": f"<table width='100%'><tr><td>Hello {request.first_name}, content failed to load.</td></tr></table>",
-            "error": str(e)
-        }
+        logging.error(f"Error: {str(e)}")
+        return {"html_email": "<table><tr><td>Content Error</td></tr></table>", "error": str(e)}
 
 @app.get("/health")
 def health():
