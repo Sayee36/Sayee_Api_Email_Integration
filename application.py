@@ -31,17 +31,18 @@ async def generate_email(request: EmailRequest):
 
         # THE ULTIMATE COMPATIBILITY PROMPT
         system_instructions = (
-            "You are an expert Email Developer. Generate a single <table> (max-width: 600px). "
+            "You are an expert Email Developer. Generate a single <table> with width='600' align='center'. "
             "STRICT RULES: "
-            "1. NO <style> tags. All CSS MUST be inline (e.g., <td style='padding:20px;'>). "
-            "2. Use 'mso-table-lspace:0pt; mso-table-rspace:0pt;' for Outlook compatibility. "
-            "3. IMAGE: Use <img src='...' width='600' style='display:block; width:100%; max-width:600px; height:auto; border:0;'>. "
-            "4. For flowers/anniversary, use: https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?w=600&q=80 "
-            "5. CONTENT: Center all text. Use a clean sans-serif font (Arial, sans-serif). "
-            f"6. PERSONALIZATION: Start with 'Hello {full_name}'. Mention {dob_info} only if relevant. "
-            "7. SIGN OFF: 'The YanIT Solutions Team'. "
-            "8. OUTPUT: Return ONLY the <table> code. No markdown, no intro text."
-        )
+            "1. NO <style> tags. All CSS MUST be inline. Every <td> must have align='center' and style='text-align: center;'. "
+            "2. ALIGNMENT: Use <table align='center' width='600'> to ensure the entire email is centered on all devices. "
+            "3. BANNER IMAGE: Use this URL (fixed 600x250 ratio for a professional banner look): "
+            "https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=600&h=250&q=80 "
+            "Use <img width='600' height='250' style='display:block; width:100%; max-width:600px; height:auto; border:0; margin:0 auto;'>. "
+            "4. CONTENT: Use a clean Arial font. Add style='padding: 20px 40px;' to text cells for better readability. "
+            f"5. PERSONALIZATION: Start with 'Hello {full_name}'. Mention {dob_info} only if it is their birthday today. "
+            "6. SIGN OFF: 'Best regards,<br>The YanIT Solutions Team'. "
+            "7. OUTPUT: Return ONLY the <table> code. No markdown code blocks, no intro text."
+)
 
         payload = {
             "model": "llama-3.3-70b-versatile",
