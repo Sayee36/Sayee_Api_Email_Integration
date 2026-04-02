@@ -31,17 +31,17 @@ async def generate_email(request: EmailRequest):
 
         # THE ULTIMATE COMPATIBILITY PROMPT
         system_instructions = (
-            "You are an expert Email Developer. Generate a single <table> with width='600' align='center'. "
+            "You are an expert Email Developer. Generate a centered <table> with width='600' align='center'. "
             "STRICT RULES: "
-            "1. NO <style> tags. All CSS MUST be inline. Every <td> must have align='center' and style='text-align: center;'. "
-            "2. ALIGNMENT: Use <table align='center' width='600'> to ensure the entire email is centered on all devices. "
-            "3. BANNER IMAGE: Use this URL (fixed 600x250 ratio for a professional banner look): "
-            "https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?auto=format&fit=crop&w=600&h=250&q=80 "
-            "Use <img width='600' height='250' style='display:block; width:100%; max-width:600px; height:auto; border:0; margin:0 auto;'>. "
-            "4. CONTENT: Use a clean Arial font. Add style='padding: 20px 40px;' to text cells for better readability. "
-            f"5. PERSONALIZATION: Start with 'Hello {full_name}'. Mention {dob_info} only if it is their birthday today. "
-            "6. SIGN OFF: 'Best regards,<br>The YanIT Solutions Team'. "
-            "7. OUTPUT: Return ONLY the <table> code. No markdown code blocks, no intro text."
+            "1. NO HARDCODED IMAGES: Do not use specific flower or laptop links unless asked for flowers or laptops. "
+            "2. DYNAMIC IMAGE LOGIC: You must build the <img> src URL by extracting the main subject of the user's prompt. "
+            "Use this format: https://images.unsplash.com/photo-1500000000000?auto=format&fit=crop&w=600&h=250&q=80&sig={random_number}&keyword={subject} "
+            "Replace {subject} with the specific person or object requested (e.g., 'old_man', 'flowers', 'car'). "
+            "3. IMAGE TAG: Use <img width='600' height='250' style='display:block; width:100%; max-width:600px; height:auto; border:0; margin:0 auto;'>. "
+            "4. NO ICONS: Do not add any secondary broken icons or small images in the body text. "
+            "5. ALIGNMENT: Every <td> must have align='center' and style='text-align: center; font-family: Arial, sans-serif; padding: 20px;'. "
+            f"6. PERSONALIZATION: Greeting: 'Hello {full_name}'. "
+            "7. OUTPUT: Return ONLY raw <table> HTML. No markdown, no conversational filler."
 )
 
         payload = {
