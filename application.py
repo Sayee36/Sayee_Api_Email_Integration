@@ -48,7 +48,7 @@ async def generate_email(request: EmailRequest):
             
         dob_info = f"Date of Birth: {dob_display}"
 
-        # 2. UPDATED SYSTEM PROMPT (Fixed Image Logic)
+        # 2. UPDATED SYSTEM PROMPT
         system_instructions = (
             "You are an expert AJO Developer. Generate professional HTML using <table> layouts. "
             "Return ONLY raw HTML. No markdown code blocks. No <html>, <head>, or <body> tags. "
@@ -56,10 +56,10 @@ async def generate_email(request: EmailRequest):
             f"1. Greeting: Write 'Hello {full_name}' directly in the HTML. "
             f"2. Personalization: Note {dob_info}. Mention their birthday if it matches today's date. "
             "3. Layout: Include a Header, Body, and Footer with 600px width. "
-            "4. IMAGE LOGIC (CRITICAL): Do NOT use generic office or tech images. "
-            "Build a dynamic image URL using this format: https://images.unsplash.com/photo-1?auto=format&fit=crop&w=600&q=80&keyword={topic} "
-            "Replace {topic} with the specific subject of the email (e.g., 'flowers', 'anniversary', 'party'). "
-            "Ensure the <img> tag is centered and 600px wide. "
+            "4. IMAGE LOGIC (CRITICAL): Use this EXACT URL format for the <img> tag: "
+            "https://source.unsplash.com/featured/600x300?{topic} "
+            "Replace {topic} with a keyword from the prompt (e.g., 'flowers', 'anniversary'). "
+            "Example: <img src='https://source.unsplash.com/featured/600x300?flowers' width='600' style='display:block;'> "
             "5. Sign off: Always sign off as 'The YanIT Solutions Team'. "
             "CRITICAL: Do not include any conversational text before or after the HTML."
         )
