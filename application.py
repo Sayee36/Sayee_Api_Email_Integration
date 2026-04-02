@@ -2,7 +2,8 @@ import logging
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
+from datetime import date  # CHANGED: Import 'date' instead of 'datetime'
 
 # -----------------------------
 # Logging
@@ -22,9 +23,10 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 # -----------------------------
 class EmailRequest(BaseModel):
     user_prompt: str
-    first_name: Optional[str] = "Valued"
-    last_name: Optional[str] = "Customer"
-    dob: Optional[datetime] = None
+    first_name: str = "Valued"
+    last_name: str = "Customer"
+    # Using 'date' automatically handles YYYY-MM-DD and ignores the time
+    dob: Optional[Union[date, str]] = "Not Provided"
 
 # -----------------------------
 # API ENDPOINT
@@ -37,19 +39,26 @@ async def generate_email(request: EmailRequest):
             "Content-Type": "application/json"
         }
 
-        # Handling potential empty fields gracefully
         full_name = f"{request.first_name} {request.last_name}".strip()
-        dob_info = f"Date of Birth: {request.dob}" if request.dob else "Date of Birth: Not provided"
+        
+        # 1. CLEAN DATE LOGIC
+        # If it's a date object, it will be in YYYY-MM-DD format
+        if isinstance(request.dob, date):
+            dob_display = request.dob.strftime("%Y-%m-%d")
+        else:
+            dob_display = "Not provided"
+            
+        dob_info = f"Date of Birth: {dob_display}"
 
-        # System Prompt: Forces Table Layout & Personalization
+        # 2. SYSTEM PROMPT
         system_instructions = (
             "You are an expert AJO Developer. Generate professional HTML using <table> layouts. "
             "Return ONLY raw HTML. No markdown code blocks. No <html>, <head>, or <body> tags. "
             "Use inline CSS for maximum compatibility (Outlook/Gmail). "
             f"1. Greeting: Write 'Hello {full_name}' directly in the HTML. "
-            f"2. Personalization: Note {dob_info}. If it's their birthday month/day based on the prompt, mention it. "
+            f"2. Personalization: Note {dob_info}. Mention their birthday if it matches today's date. "
             "3. Layout: Include a Header, Body, and Footer. "
-            "4. Image Logic: Include a professional 600px wide <img> tag with a high-quality relevant URL. "
+            "4. Image Logic: Include a professional 600px wide <img> tag with a relevant high-quality URL. "
             "5. Sign off: Always sign off as 'The YanIT Solutions Team'. "
             "CRITICAL: Do not include any conversational text before or after the HTML."
         )
@@ -60,7 +69,7 @@ async def generate_email(request: EmailRequest):
                 {"role": "system", "content": system_instructions},
                 {"role": "user", "content": f"Topic: {request.user_prompt}"}
             ],
-            "temperature": 0.4, # Slightly lower for more consistent HTML structure
+            "temperature": 0.4,
             "max_tokens": 1500
         }
 
@@ -72,9 +81,8 @@ async def generate_email(request: EmailRequest):
         result = response.json()
         html_output = result["choices"][0]["message"]["content"]
         
-        # Enhanced Cleaning: Removes markdown and any accidental lead-in text
+        # 3. CLEANING OUTPUT
         if "table" in html_output.lower():
-            # Find the first occurrence of <table and the last occurrence of </table>
             start_index = html_output.lower().find("<table")
             end_index = html_output.lower().rfind("</table>") + 8
             if start_index != -1 and end_index != -1:
@@ -85,7 +93,7 @@ async def generate_email(request: EmailRequest):
     except Exception as e:
         logging.error(f"Failed to generate email: {str(e)}")
         return {
-            "html_email": f"<table width='100%'><tr><td>Hello {request.first_name}, something went wrong.</td></tr></table>",
+            "html_email": f"<table width='100%'><tr><td>Hello {request.first_name}, content failed to load.</td></tr></table>",
             "error": str(e)
         }
 
