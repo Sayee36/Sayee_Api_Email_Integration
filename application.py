@@ -24,7 +24,7 @@ class EmailRequest(BaseModel):
     user_prompt: str
     first_name: Optional[str] = "Valued"
     last_name: Optional[str] = "Customer"
-    dob: Optional[str] = None
+    dob: Optional[datetime] = None
 
 # -----------------------------
 # API ENDPOINT
