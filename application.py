@@ -3,7 +3,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Union
-from datetime import date  # CHANGED: Import 'date' instead of 'datetime'
+from datetime import date
 
 # -----------------------------
 # Logging
@@ -25,7 +25,6 @@ class EmailRequest(BaseModel):
     user_prompt: str
     first_name: str = "Valued"
     last_name: str = "Customer"
-    # Using 'date' automatically handles YYYY-MM-DD and ignores the time
     dob: Optional[Union[date, str]] = "Not Provided"
 
 # -----------------------------
@@ -42,7 +41,6 @@ async def generate_email(request: EmailRequest):
         full_name = f"{request.first_name} {request.last_name}".strip()
         
         # 1. CLEAN DATE LOGIC
-        # If it's a date object, it will be in YYYY-MM-DD format
         if isinstance(request.dob, date):
             dob_display = request.dob.strftime("%Y-%m-%d")
         else:
@@ -50,15 +48,18 @@ async def generate_email(request: EmailRequest):
             
         dob_info = f"Date of Birth: {dob_display}"
 
-        # 2. SYSTEM PROMPT
+        # 2. UPDATED SYSTEM PROMPT (Fixed Image Logic)
         system_instructions = (
             "You are an expert AJO Developer. Generate professional HTML using <table> layouts. "
             "Return ONLY raw HTML. No markdown code blocks. No <html>, <head>, or <body> tags. "
             "Use inline CSS for maximum compatibility (Outlook/Gmail). "
             f"1. Greeting: Write 'Hello {full_name}' directly in the HTML. "
             f"2. Personalization: Note {dob_info}. Mention their birthday if it matches today's date. "
-            "3. Layout: Include a Header, Body, and Footer. "
-            "4. Image Logic: Include a professional 600px wide <img> tag with a relevant high-quality URL. "
+            "3. Layout: Include a Header, Body, and Footer with 600px width. "
+            "4. IMAGE LOGIC (CRITICAL): Do NOT use generic office or tech images. "
+            "Build a dynamic image URL using this format: https://images.unsplash.com/photo-1?auto=format&fit=crop&w=600&q=80&keyword={topic} "
+            "Replace {topic} with the specific subject of the email (e.g., 'flowers', 'anniversary', 'party'). "
+            "Ensure the <img> tag is centered and 600px wide. "
             "5. Sign off: Always sign off as 'The YanIT Solutions Team'. "
             "CRITICAL: Do not include any conversational text before or after the HTML."
         )
